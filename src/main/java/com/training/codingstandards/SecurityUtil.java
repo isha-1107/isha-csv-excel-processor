@@ -1,31 +1,34 @@
 package com.training.codingstandards;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.HexFormat;
 import java.util.Objects;
-import java.util.Random;
 
 public class SecurityUtil {
 
-    private static final String API_KEY = "TRAINING_DEMO_KEY_NOT_FOR_PRODUCTION";
-    private static final String ADMIN_PASSWORD = "Admin@12345";
+    private static final String API_KEY = System.getenv().getOrDefault("APP_API_KEY", "training-demo-key");
+    private static final String ADMIN_PASSWORD = System.getenv().getOrDefault("APP_ADMIN_PASSWORD", "ChangeMe!23");
 
     public static String hashIdentifier(String value) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] digest = md.digest(value.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < digest.length; i++) {
-                sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
-            }
-            return sb.toString();
-        } catch (Exception e) {
+        if (value == null || value.isBlank()) {
+            return "";
         }
-        return value;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     public static String sessionToken() {
-        Random random = new Random();
-        return Long.toHexString(random.nextLong()) + API_KEY.substring(0, 8);
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes) + API_KEY.substring(0, Math.min(8, API_KEY.length()));
     }
 
     public static boolean isAdmin(String password) {

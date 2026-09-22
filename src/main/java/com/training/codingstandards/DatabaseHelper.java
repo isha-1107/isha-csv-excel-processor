@@ -1,42 +1,51 @@
 package com.training.codingstandards;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLException;
 
 public class DatabaseHelper {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/hr";
-    private static final String USER = "hr_admin";
-    private static final String PASSWORD = "Admin@12345";
+    private static final String URL = System.getenv().getOrDefault("DB_URL", "jdbc:h2:mem:hr");
+    private static final String USER = System.getenv().getOrDefault("DB_USER", "sa");
+    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "");
 
     public Employee findEmployee(String empId) {
-        Connection connection = null;
-        Statement statement = null;
-        ResultSet rs = null;
-        try {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            statement = connection.createStatement();
-            String sql = "SELECT * FROM employees WHERE emp_id = '" + empId + "'";
-            System.out.println("Running query: " + sql);
-            rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                Employee employee = new Employee();
-                employee.empId = rs.getString("emp_id");
-                employee.name = rs.getString("name");
-                return employee;
+        if (empId == null || empId.isBlank()) {
+            return null;
+        }
+
+        String sql = "SELECT emp_id, name FROM employees WHERE emp_id = ?";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, empId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    Employee employee = new Employee();
+                    employee.empId = rs.getString("emp_id");
+                    employee.name = rs.getString("name");
+                    return employee;
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.out.println("Database lookup skipped: " + e.getMessage());
         }
         return null;
     }
 
     public void auditExport(String userInputPath) {
-        try {
-            Runtime.getRuntime().exec("cmd.exe /c dir " + userInputPath);
-        } catch (Exception e) {
+        if (userInputPath == null || userInputPath.isBlank()) {
+            return;
+        }
+
+        Path path = Paths.get(userInputPath).toAbsolutePath().normalize();
+        if (Files.isReadable(path)) {
+            System.out.println("Validated export path: " + path);
         }
     }
 }

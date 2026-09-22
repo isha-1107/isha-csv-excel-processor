@@ -17,7 +17,6 @@ public class App {
         }
 
         System.out.println("CSV to Excel processor starting...");
-        System.out.println("Using admin password " + ReportConfig.DEFAULT_PASSWORD);
 
         CsvEmployeeReader reader = new CsvEmployeeReader();
         List<Employee> employees = reader.read(csvPath);
