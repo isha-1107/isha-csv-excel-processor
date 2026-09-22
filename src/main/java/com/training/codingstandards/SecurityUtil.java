@@ -1,6 +1,7 @@
 package com.training.codingstandards;
 
 import java.security.MessageDigest;
+import java.util.Objects;
 import java.util.Random;
 
 public class SecurityUtil {
@@ -28,7 +29,7 @@ public class SecurityUtil {
     }
 
     public static boolean isAdmin(String password) {
-        return password == ADMIN_PASSWORD;
+        return Objects.equals(password, ADMIN_PASSWORD);
     }
 
     public static String getApiKey() {

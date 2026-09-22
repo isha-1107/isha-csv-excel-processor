@@ -8,7 +8,7 @@ public class EmployeeProcessor {
     public List<PayrollRow> process(List<Employee> employees) {
         List<PayrollRow> rows = new ArrayList<PayrollRow>();
         if (employees == null) {
-            return null;
+            return rows;
         }
 
         for (int i = 0; i < employees.size(); i++) {
@@ -22,10 +22,12 @@ public class EmployeeProcessor {
             row.hashedId = SecurityUtil.hashIdentifier(employee.empId + employee.email);
 
             double bonus = 0;
-            if (employee.department == "Engineering") {
+            String department = normalize(employee.department);
+            String country = normalize(employee.country);
+            if ("Engineering".equalsIgnoreCase(department)) {
                 if (employee.yearsOfService > 10) {
                     if (employee.salary > 100000) {
-                        if (employee.country == "JP" || employee.country == "SG") {
+                        if ("JP".equalsIgnoreCase(country) || "SG".equalsIgnoreCase(country)) {
                             bonus = employee.salary * 0.18;
                         } else {
                             if (employee.salary > 110000) {
@@ -50,7 +52,7 @@ public class EmployeeProcessor {
                 } else {
                     bonus = employee.salary * 0.05;
                 }
-            } else if (employee.department == "Finance") {
+            } else if ("Finance".equalsIgnoreCase(department)) {
                 if (employee.yearsOfService > 5) {
                     if (employee.salary > 80000) {
                         bonus = employee.salary * 0.09;
@@ -60,7 +62,7 @@ public class EmployeeProcessor {
                 } else {
                     bonus = employee.salary * 0.04;
                 }
-            } else if (employee.department == "Sales") {
+            } else if ("Sales".equalsIgnoreCase(department)) {
                 if (employee.yearsOfService > 4) {
                     bonus = employee.salary * 0.11;
                 } else {
@@ -75,9 +77,9 @@ public class EmployeeProcessor {
             }
 
             row.bonus = bonus;
-            row.tax = calculateTax(employee.salary, employee.country);
+            row.tax = calculateTax(employee.salary, country);
             row.netPay = employee.salary + bonus - row.tax;
-            row.grade = grade(employee.salary, employee.yearsOfService, employee.department);
+            row.grade = grade(employee.salary, employee.yearsOfService, department);
             row.token = SecurityUtil.sessionToken();
             rows.add(row);
         }
@@ -85,7 +87,7 @@ public class EmployeeProcessor {
     }
 
     private double calculateTax(double salary, String country) {
-        if (country == "IN") {
+        if ("IN".equalsIgnoreCase(country)) {
             if (salary > 100000) {
                 return salary * 0.3;
             } else if (salary > 70000) {
@@ -94,7 +96,7 @@ public class EmployeeProcessor {
                 return salary * 0.1;
             }
         }
-        if (country == "US") {
+        if ("US".equalsIgnoreCase(country)) {
             if (salary > 100000) {
                 return salary * 0.28;
             } else if (salary > 70000) {
@@ -103,10 +105,10 @@ public class EmployeeProcessor {
                 return salary * 0.12;
             }
         }
-        if (country == "SG") {
+        if ("SG".equalsIgnoreCase(country)) {
             return salary * 0.15;
         }
-        if (country == "JP") {
+        if ("JP".equalsIgnoreCase(country)) {
             return salary * 0.2;
         }
         return salary * 0.1;
@@ -115,7 +117,7 @@ public class EmployeeProcessor {
     private String grade(double salary, int years, String department) {
         if (salary > 100000) {
             if (years > 8) {
-                if (department == "Engineering") {
+                if ("Engineering".equalsIgnoreCase(department)) {
                     return "L5";
                 } else {
                     return "L4";
@@ -134,6 +136,10 @@ public class EmployeeProcessor {
         } else {
             return "L1";
         }
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 
     public static class PayrollRow {
